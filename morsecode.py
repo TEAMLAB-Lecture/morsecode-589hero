@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-
+import re
 
 # Help Function - 수정하지 말 것
 def get_morse_code_dict():
@@ -50,10 +50,35 @@ def is_help_command(user_input):
         False
     """
     # ===Modify codes below=============
-    # 조건에 따라 변환되어야 할 결과를 result 변수에 할당 또는 필요에 따라 자유로운 수정
-    result = None
+    if user_input.upper() == 'H' or user_input.upper() == 'HELP':
+        return True
 
-    return result
+    return False
+    # ==================================
+
+
+def is_terminate_command(user_input):
+    """
+    Input:
+        - user_input : 문자열값으로 사용자가 입력하는 문자
+    Output:
+        - 입력한 값이 "0"일 경우 True, 그렇지 않을 경우 False를 반환함
+    Examples:
+        >>> import morsecode as mc
+        >>> mc.is_help_command("0")
+        True
+        >>> mc.is_help_command("1")
+        False
+        >>> mc.is_help_command("H")
+        False
+        >>> mc.is_help_command("HeLp")
+        False
+    """
+    # ===Modify codes below=============
+    if user_input == '0':
+        return True
+
+    return False
     # ==================================
 
 
@@ -82,10 +107,23 @@ def is_validated_english_sentence(user_input):
         True
     """
     # ===Modify codes below=============
-    # 조건에 따라 변환되어야 할 결과를 result 변수에 할당 또는 필요에 따라 자유로운 수정
-    result = None
+    user_input_copy = user_input
 
-    return result
+    # 0~9숫자를 포함하고 있으면 False 반환
+    if re.search('[0-9]', user_input_copy):
+        return False
+
+    # 특수문자 목록에 -을 추가. -추가 안 하면 "... --- ..."와 같은 모스부호 입력에도 유효한 영어 문자로 판단함
+    # 특수문자 포함되어 있으면 False 반환
+    if re.search('[_@#$%^&*()-+=\[\]\{\}\"\';:\|`~-]', user_input_copy):
+        return False
+    
+    # 문장부호(.,!?)을 없앤 후 빈 문자열이면 False 반환
+    user_input_copy = re.sub('[.,!? ]', '', user_input_copy)
+    if user_input_copy == '':
+        return False
+
+    return True
     # ==================================
 
 
@@ -113,10 +151,19 @@ def is_validated_morse_code(user_input):
         False
     """
     # ===Modify codes below=============
-    # 조건에 따라 변환되어야 할 결과를 result 변수에 할당 또는 필요에 따라 자유로운 수정
-    result = None
+    user_input_copy = user_input
 
-    return result
+    # "-","."," "외 다른 문자가 포함되어 있으면 False 반환
+    if re.search('[^-. ]', user_input_copy):
+        return False
+    
+    # morse_code_dict의 value에 없는 모스 부호이면 False 반환
+    morse_code_dict = get_morse_code_dict()
+    for morse_code in user_input_copy.split():
+        if morse_code not in morse_code_dict.values():
+            return False
+
+    return True
     # ==================================
 
 
@@ -139,8 +186,11 @@ def get_cleaned_english_sentence(raw_english_sentence):
         'Fine Thank you and you'
     """
     # ===Modify codes below=============
-    # 조건에 따라 변환되어야 할 결과를 result 변수에 할당 또는 필요에 따라 자유로운 수정
-    result = None
+    # 양쪽 공백 삭제
+    result = raw_english_sentence.strip()
+
+    # 문장부호(.,!?) 삭제
+    result = re.sub('[.,!?]', '', result)
 
     return result
     # ==================================
@@ -168,11 +218,11 @@ def decoding_character(morse_character):
         'K'
     """
     # ===Modify codes below=============
-    # 조건에 따라 변환되어야 할 결과를 result 변수에 할당 또는 필요에 따라 자유로운 수정
     morse_code_dict = get_morse_code_dict()
-    result = None
-
-    return result
+    
+    for k, v in morse_code_dict.items():
+        if morse_character == v:
+            return k
     # ==================================
 
 
@@ -198,11 +248,10 @@ def encoding_character(english_character):
         '-.'
     """
     # ===Modify codes below=============
-    # 조건에 따라 변환되어야 할 결과를 result 변수에 할당 또는 필요에 따라 자유로운 수정
     morse_code_dict = get_morse_code_dict()
-    result = None
 
-    return result
+    # morse_code_dict의 key는 전부 대문자이므로 upper()이용
+    return morse_code_dict[english_character.upper()]
     # ==================================
 
 
@@ -224,10 +273,15 @@ def decoding_sentence(morse_sentence):
         'YOU ARE F'
     """
     # ===Modify codes below=============
-    # 조건에 따라 변환되어야 할 결과를 result 변수에 할당 또는 필요에 따라 자유로운 수정
-    result = None
+    morse_list = morse_sentence.split('  ')
 
-    return result
+    english_sentence = ''
+    for morse_word in morse_list:
+        english_sentence += ''.join(map(decoding_character, morse_word.split()))
+        english_sentence += ' '
+    english_sentence = english_sentence.rstrip()
+
+    return english_sentence
     # ==================================
 
 
@@ -250,10 +304,15 @@ def encoding_sentence(english_sentence):
         '.... ..  .... ..'
     """
     # ===Modify codes below=============
-    # 조건에 따라 변환되어야 할 결과를 result 변수에 할당 또는 필요에 따라 자유로운 수정
-    result = None
+    cleaned_english_sentence = get_cleaned_english_sentence(english_sentence)
 
-    return result
+    morse_sentence = ''
+    for english_word in cleaned_english_sentence.split():
+        morse_sentence += ' '.join(map(encoding_character, english_word))
+        morse_sentence += '  '
+    morse_sentence = morse_sentence.strip()
+
+    return morse_sentence
     # ==================================
 
 
@@ -261,7 +320,21 @@ def main():
     print("Morse Code Program!!")
     # ===Modify codes below=============
 
-
+    while True:
+        user_input = input('Input your message(H - Help, 0 - Exit): ')
+        
+        if is_help_command(user_input):
+            print(get_help_message())
+        elif is_terminate_command(user_input):
+            break
+        elif is_validated_english_sentence(user_input):
+            # 유효한 영어 문장 입력
+            print(encoding_sentence(user_input))
+        elif is_validated_morse_code(user_input): 
+            # 유효한 모스부호 입력
+            print(decoding_sentence(user_input))
+        else:
+            print('Wrong Input')
 
     # ==================================
     print("Good Bye")
